@@ -78,18 +78,8 @@ import {
   // How to build exits
   BuildWithCodeExit,
   BuildWithStudioExit,
-  // Phone collection exit
-  PhoneCollectedExit,
 } from "../tools/exits";
-import {
-  sendConsultationBooking,
-  sendSoftLanding,
-  collectPhoneNumber,
-  sendSalesBooking,
-  sendPartnerInfo,
-  sendADKResources,
-  sendStudioResources,
-} from "./helpers";
+import { sendConsultationBooking, sendSoftLanding, sendADKResources, sendStudioResources } from "./helpers";
 
 export default new Conversation({
   channel: ["webchat.channel", "chat.channel"],
@@ -292,7 +282,7 @@ Then exit based on their answer.`,
 
 IMPORTANT: Do NOT summarize or repeat what they told you about their use case. Just move forward with qualification questions.
 
-Gather:
+STEP 1 - Gather:
 1. **Timeline**: When do they need this?
    - ASAP (within 2 weeks)
    - Within a month
@@ -310,64 +300,68 @@ Qualification criteria:
 - QUALIFIED: Budget is over $2000 regardless of timeline
 - NOT QUALIFIED: Budget under $500 OR timeline is "exploring" with low budget
 
-If QUALIFIED, ask how they'd like to connect:
-- "Call me ASAP" - we'll call them
-- "Let me book a time" - send booking link
+STEP 2 - Based on qualification:
 
-If NOT QUALIFIED, ask if they're interested in:
-- Building it themselves (go to how_to_build)
-- Learning about our partner program (agencies who can help)
+If QUALIFIED:
+- Ask how they'd like to connect: "Call me ASAP" or "Let me book a time"
+- If they want a call → collect their phone number, then use qualified exit with the phone number
+- If they want to book → use qualified exit with booking preference (no phone needed)
+
+If NOT QUALIFIED:
+- Ask if they're interested in building it themselves OR learning about our partner program
+- Use the appropriate exit based on their choice
 
 Be respectful regardless of qualification. Everyone deserves good service.`,
             exits: [BuildForMeQualifiedExit, BuildForMeNotQualifiedExit],
           });
 
           if (result.is(BuildForMeQualifiedExit)) {
+            state.phase = "completed";
             if (result.output.contactPreference === "call") {
-              state.phase = "collecting_phone";
-              continue; // → immediately run collecting_phone phase
+              await conversation.send({
+                type: "text",
+                payload: {
+                  text: `Perfect! Our team will call you at ${result.output.phone} shortly. Talk soon!`,
+                },
+              });
             } else {
-              state.phase = "completed";
-              await sendSalesBooking(conversation);
-              return; // → done, wait for next message
+              await conversation.send({
+                type: "text",
+                payload: {
+                  text: `Excellent! Here's the link to book a time with our team:
+
+https://calendly.com/botpress-sales/demo
+
+We'll dive into your use case and show you how we can help build it.
+
+Looking forward to it!`,
+                },
+              });
             }
+            return; // → done, wait for next message
           } else if (result.is(BuildForMeNotQualifiedExit)) {
             if (result.output.interestedInPartner) {
               state.phase = "completed";
-              await sendPartnerInfo(conversation);
+              await conversation.send({
+                type: "text",
+                payload: {
+                  text: `Our **Partner Program** connects you with certified Botpress experts who can help build your solution.
+
+**Benefits:**
+- Expert implementation at various price points
+- Flexible engagement models
+- Ongoing support options
+
+Learn more and find a partner: https://botpress.com/partners
+
+Feel free to reach out if you have questions!`,
+                },
+              });
               return; // → done, wait for next message
             } else {
               state.phase = "how_to_build";
               continue; // → immediately run how_to_build phase
             }
-          }
-          return;
-        }
-
-        // ============================================
-        // STATE: collecting_phone
-        // TRANSITIONS:
-        //   → completed (phone collected)
-        // ============================================
-        case "collecting_phone": {
-          const result = await execute({
-            instructions: `Ask the user for their phone number so our team can call them.
-
-Be friendly and brief. Once you have a valid phone number, use the exit.
-
-Do NOT over-explain or be overly formal. Just ask for the number.`,
-            exits: [PhoneCollectedExit],
-          });
-
-          if (result.is(PhoneCollectedExit)) {
-            state.phase = "completed";
-            await conversation.send({
-              type: "text",
-              payload: {
-                text: `Perfect! Our team will call you at ${result.output.phone} shortly. Talk soon!`,
-              },
-            });
-            return; // → done, wait for next message
           }
           return;
         }
@@ -412,14 +406,13 @@ Use the appropriate exit once they decide.`,
         // TRANSITIONS: none (handles follow-up questions)
         // ============================================
         case "completed": {
-          await execute({
-            instructions: `The onboarding flow is complete.
-
-If the user has follow-up questions, answer them helpfully.
-If they want to restart or explore a different path, help them do so.
-Be friendly and supportive.`,
+          await conversation.send({
+            type: "text",
+            payload: {
+              text: `Conversation has concluded.`,
+            },
           });
-          return; // → done, wait for next message
+          return;
         }
 
         default:

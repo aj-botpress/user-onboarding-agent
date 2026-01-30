@@ -93,11 +93,12 @@ export const UseCaseSelfBuildExit = new Autonomous.Exit({
 
 export const BuildForMeQualifiedExit = new Autonomous.Exit({
   name: "build_for_me_qualified",
-  description: "User qualifies for sales assistance",
+  description: "User qualifies for sales assistance and contact method has been determined",
   schema: z.object({
     timeline: z.enum(["asap", "month", "few_months", "exploring"]),
     budget: z.enum(["under_500", "500_to_2000", "over_2000", "not_sure"]),
     contactPreference: z.enum(["call", "booking"]).describe("How they want to be contacted"),
+    phone: z.string().optional().describe("Phone number if they chose call - must be collected before exiting"),
   }),
 });
 
@@ -125,14 +126,3 @@ export const BuildWithStudioExit = new Autonomous.Exit({
   description: "User wants to build visually using Botpress Studio",
 });
 
-// ============================================
-// PHONE COLLECTION EXIT
-// ============================================
-
-export const PhoneCollectedExit = new Autonomous.Exit({
-  name: "phone_collected",
-  description: "User's phone number has been collected for callback",
-  schema: z.object({
-    phone: z.string().describe("The user's phone number"),
-  }),
-});
