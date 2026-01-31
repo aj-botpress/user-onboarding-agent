@@ -146,7 +146,10 @@ If they want the consultation:
 - Just say something like "Great, let me ask a few quick questions to see if you qualify"
 - Then use the wants_consultation exit
 
-If they prefer to explore/build on their own, use the self_serve exit (we'll help them get started).`,
+If they prefer to explore/build on their own, OR say "no", "I'm good", "no thanks", etc:
+- Use the self_serve exit (we'll help them get started with building)
+
+Any decline or negative response should be treated as self_serve, not as ending the conversation.`,
             exits: [WantsConsultationExit, SelfServeExit],
           });
 
@@ -254,15 +257,17 @@ WHEN TO STOP GATHERING INFO:
 - 2 follow-up questions max about their use case
 - You don't need all the info - use "unknown" for missing fields
 
-AFTER GATHERING (or if user isn't giving details), send a CHOICE message:
+AFTER GATHERING (or if user isn't giving details), send a CHOICE:
 - text: "Would you like help from our team, or prefer to build it yourself?"
 - options: "Help from your team" and "I'll build it myself"
 
-WHEN THEY CHOOSE:
-- "Help from your team" → use use_case_collected exit
-- "I'll build it myself" → use use_case_self_build exit
+The choice text should ONLY be the question - no extra "Please choose".
 
-IMPORTANT: Do NOT send any acknowledgment message like "Great!" - just exit silently. The next phase will handle the response.`,
+WHEN THEY CHOOSE:
+- "Help from your team" → use use_case_collected exit IMMEDIATELY
+- "I'll build it myself" → use use_case_self_build exit IMMEDIATELY
+
+Do NOT send any acknowledgment - just exit silently.`,
             exits: [UseCaseCollectedExit, UseCaseSelfBuildExit],
           });
 
@@ -287,40 +292,36 @@ IMPORTANT: Do NOT send any acknowledgment message like "Great!" - just exit sile
           const result = await execute({
             instructions: `The user wants help building their chatbot. Qualify them for sales assistance.
 
-IMPORTANT: Do NOT summarize or repeat what they told you about their use case. Just move forward with qualification questions.
+IMPORTANT: Do NOT summarize or repeat what they told you about their use case. Just move forward with qualification.
 
-STEP 1 - Gather:
-1. **Timeline**: When do they need this?
-   - ASAP (within 2 weeks)
-   - Within a month
-   - Within a few months
-   - Just exploring for now
+Be warm and conversational. Use CHOICE components for the questions below - the choice text should ONLY be the question, no extra "Please choose".
 
-2. **Budget**: Expected monthly investment?
-   - Under $500/month
-   - $500-2000/month
-   - Over $2000/month
-   - Not sure yet
+QUESTION 1 - Timeline:
+Text: "Awesome! When are you looking to have this up and running?"
+Options: "ASAP (within 2 weeks)", "Within a month", "Within a few months", "Just exploring for now"
+
+QUESTION 2 - Budget:
+Text: "And what kind of monthly budget are you working with?"
+Options: "Under $500/month", "$500-2000/month", "Over $2000/month", "Not sure yet"
 
 Qualification criteria:
 - QUALIFIED: Timeline is ASAP or month AND budget is $500+ or "not sure"
 - QUALIFIED: Budget is over $2000 regardless of timeline
 - NOT QUALIFIED: Budget under $500 OR timeline is "exploring" with low budget
 
-STEP 2 - Based on qualification:
+AFTER QUALIFICATION:
 
 If QUALIFIED:
-- Ask how they'd like to connect: "Call me ASAP" or "Let me book a time"
-- If they want a call → collect their phone number, then exit with the phone number
-- If they want to book → exit with booking preference (no phone needed)
+Text: "Great! How would you like to connect with our team?"
+Options: "Call me ASAP", "Let me book a time"
+- If call → collect their phone number, then exit
+- If book → exit with booking preference
 
 If NOT QUALIFIED:
-- Ask if they're interested in building it themselves OR learning about our partner program
-- Exit based on their choice
+Send a warm message like: "Thanks for sharing! While our team focuses on larger projects, we have amazing certified partners who'd love to help you out. Check them out at botpress.com/partners - good luck with your project!"
+Then exit with interestedInPartner: true
 
-IMPORTANT: When exiting, do NOT send any acknowledgment message like "Great!" or "Thanks!" - just exit silently. The next phase will handle the response.
-
-Be respectful regardless of qualification. Everyone deserves good service.`,
+When exiting, do NOT send any acknowledgment - just exit silently.`,
             exits: [BuildForMeQualifiedExit, BuildForMeNotQualifiedExit],
           });
 
@@ -349,28 +350,9 @@ Looking forward to it!`,
             }
             return; // → done, wait for next message
           } else if (result.is(BuildForMeNotQualifiedExit)) {
-            if (result.output.interestedInPartner) {
-              state.phase = "completed";
-              await conversation.send({
-                type: "text",
-                payload: {
-                  text: `Our **Partner Program** connects you with certified Botpress experts who can help build your solution.
-
-**Benefits:**
-- Expert implementation at various price points
-- Flexible engagement models
-- Ongoing support options
-
-Learn more and find a partner: https://botpress.com/partners
-
-Feel free to reach out if you have questions!`,
-                },
-              });
-              return; // → done, wait for next message
-            } else {
-              state.phase = "how_to_build";
-              continue; // → immediately run how_to_build phase
-            }
+            // LLM already sent warm message with partners link
+            state.phase = "completed";
+            return; // → done, wait for next message
           }
           return;
         }
@@ -385,19 +367,20 @@ Feel free to reach out if you have questions!`,
           const result = await execute({
             instructions: `The user wants to build their chatbot themselves. Help them choose the right approach.
 
-Ask how they prefer to build:
+Be warm and encouraging! Briefly explain the two options, then send a CHOICE:
 
-1. **With Code (ADK)** - TypeScript-first, full control, great for developers
-   - Best for: developers, complex integrations, custom logic, CI/CD workflows
+Text message first: "There are two ways to build with Botpress - with code for full control, or visually for speed. Which sounds more like you?"
 
-2. **Visual Editor (Studio)** - No-code, drag-and-drop, quick to prototype
-   - Best for: non-developers, rapid prototyping, simple flows
+Then send a CHOICE with text: "How would you like to build?"
+Options: "With Code (ADK)", "Visual Builder (Studio)"
+
+The choice text should ONLY be the question - no extra "Please choose".
 
 WHEN THEY CHOOSE:
-- If they choose code/ADK → use build_with_code exit IMMEDIATELY
-- If they choose studio/visual → use build_with_studio exit IMMEDIATELY
+- Code/ADK → use build_with_code exit IMMEDIATELY
+- Studio/Visual → use build_with_studio exit IMMEDIATELY
 
-IMPORTANT: Do NOT send any acknowledgment message like "Great choice!" - just exit silently. The next phase will handle the response.`,
+Do NOT send any acknowledgment message - just exit silently.`,
             exits: [BuildWithCodeExit, BuildWithStudioExit],
           });
 
