@@ -257,11 +257,11 @@ WHEN TO STOP GATHERING INFO:
 - 2 follow-up questions max about their use case
 - You don't need all the info - use "unknown" for missing fields
 
-AFTER GATHERING (or if user isn't giving details), send a CHOICE:
+AFTER GATHERING (or if user isn't giving details), send a CHOICE component:
 - text: "Would you like help from our team, or prefer to build it yourself?"
 - options: "Help from your team" and "I'll build it myself"
 
-The choice text should ONLY be the question - no extra "Please choose".
+IMPORTANT: Do NOT send a separate text message before the choice - the choice component already displays the question. Just send the choice directly.
 
 WHEN THEY CHOOSE:
 - "Help from your team" → use use_case_collected exit IMMEDIATELY
@@ -294,14 +294,14 @@ Do NOT send any acknowledgment - just exit silently.`,
 
 IMPORTANT: Do NOT summarize or repeat what they told you about their use case. Just move forward with qualification.
 
-Be warm and conversational. Use CHOICE components for the questions below - the choice text should ONLY be the question, no extra "Please choose".
+Use CHOICE components for questions. IMPORTANT: Do NOT send a separate text message before each choice - the choice component already displays the question text. Just send the choice directly.
 
 QUESTION 1 - Timeline:
-Text: "Awesome! When are you looking to have this up and running?"
+Send CHOICE with text: "Awesome! We'd love to help you. When are you looking to have this up and running?"
 Options: "ASAP (within 2 weeks)", "Within a month", "Within a few months", "Just exploring for now"
 
 QUESTION 2 - Budget:
-Text: "And what kind of monthly budget are you working with?"
+Send CHOICE with text: "And what kind of monthly budget are you working with?"
 Options: "Under $500/month", "$500-2000/month", "Over $2000/month", "Not sure yet"
 
 Qualification criteria:
@@ -312,13 +312,13 @@ Qualification criteria:
 AFTER QUALIFICATION:
 
 If QUALIFIED:
-Text: "Great! How would you like to connect with our team?"
+Send CHOICE with text: "Great! How would you like to connect with our team?"
 Options: "Call me ASAP", "Let me book a time"
 - If call → collect their phone number, then exit
 - If book → exit with booking preference
 
 If NOT QUALIFIED:
-Send a warm message like: "Thanks for sharing! While our team focuses on larger projects, we have amazing certified partners who'd love to help you out. Check them out at botpress.com/partners - good luck with your project!"
+Send a text message: "Thanks for sharing! While our team focuses on larger projects, we have amazing certified partners who'd love to help you out. Check them out at botpress.com/partners - good luck with your project!"
 Then exit with interestedInPartner: true
 
 When exiting, do NOT send any acknowledgment - just exit silently.`,
@@ -367,14 +367,10 @@ Looking forward to it!`,
           const result = await execute({
             instructions: `The user wants to build their chatbot themselves. Help them choose the right approach.
 
-Be warm and encouraging! Briefly explain the two options, then send a CHOICE:
-
-Text message first: "There are two ways to build with Botpress - with code for full control, or visually for speed. Which sounds more like you?"
-
-Then send a CHOICE with text: "How would you like to build?"
+Send a CHOICE component with text: "There are two ways to build - with code for full control, or visually for speed. Which sounds more like you?"
 Options: "With Code (ADK)", "Visual Builder (Studio)"
 
-The choice text should ONLY be the question - no extra "Please choose".
+IMPORTANT: Do NOT send a separate text message before the choice - the choice component already displays the question. Just send the choice directly.
 
 WHEN THEY CHOOSE:
 - Code/ADK → use build_with_code exit IMMEDIATELY
