@@ -10,52 +10,33 @@
  * STATE MACHINE DIAGRAM:
  * ----------------------
  *
- *                      ┌──────────────────────┐
- *                      │ intent_classification │
- *                      └───────────┬──────────┘
- *                                  │
- *                 ┌────────────────┴────────────────┐
- *                 │                                 │
- *                 ▼                                 ▼
- *        ┌────────────────┐                ┌────────────────┐
- *        │   exploring    │                │    use_case    │
- *        └───────┬────────┘                └───────┬────────┘
- *                │                                 │
- *       ┌────────┴────────┐               ┌───────┴───────┐
- *       │                 │               │               │
- *       ▼                 ▼               ▼               ▼
- *  ┌─────────┐  ┌─────────────────┐  ┌─────────────┐  ┌──────────────┐
- *  │completed│  │ consultation_   │  │ build_for_me│  │ how_to_build │
- *  │(self-   │  │ qualification   │  └──────┬──────┘  └──────┬───────┘
- *  │ serve)  │  └────────┬────────┘         │                │
- *  └─────────┘           │          ┌───────┼───────┐        │
- *                        │          │       │       │        │
- *                        ▼          ▼       ▼       ▼        ▼
- *                   ┌─────────────────────────────────────────────┐
- *                   │                 completed                    │
- *                   │  (booked, soft_landing, call, booking,      │
- *                   │   partner, adk, studio)                      │
- *                   └─────────────────────────────────────────────┘
+ *                        ┌──────────────────────┐
+ *                        │ intent_classification │
+ *                        └───────────┬──────────┘
+ *                                    │
+ *                   ┌────────────────┴────────────────┐
+ *                   │                                 │
+ *                   ▼                                 ▼
+ *          ┌────────────────┐                ┌────────────────┐
+ *          │   exploring    │                │    use_case    │
+ *          └───────┬────────┘                └───────┬────────┘
+ *                  │                                 │
+ *         ┌────────┴────────┐               ┌───────┴───────┐
+ *         │                 │               │               │
+ *         ▼                 ▼               ▼               ▼
+ *  ┌─────────────┐  ┌─────────────────┐  ┌─────────────┐  ┌─────────────┐
+ *  │how_to_build │  │ consultation_   │  │build_for_me │  │how_to_build │
+ *  │(self-serve) │  │ qualification   │  └──────┬──────┘  └──────┬──────┘
+ *  └──────┬──────┘  └────────┬────────┘         │                │
+ *         │                  │           ┌──────┼──────┐         │
+ *         │                  │           │      │      └─────────┤
+ *         │                  │           │      │                │
+ *         ▼                  ▼           ▼      ▼                ▼
+ *  ┌─────────────────────────────────────────────────────────────────┐
+ *  │                          completed                              │
+ *  │  (booked, soft_landing, call, booking, adk, studio)             │
+ *  └─────────────────────────────────────────────────────────────────┘
  *
- * TRANSITIONS TABLE:
- * ------------------
- * | From                       | Exit                  | To                        |
- * |----------------------------|-----------------------|---------------------------|
- * | intent_classification      | ExploringExit         | exploring                 |
- * | intent_classification      | HasUseCaseExit        | use_case                  |
- * | exploring                  | SelfServeExit         | completed                 |
- * | exploring                  | WantsConsultationExit | consultation_qualification|
- * | consultation_qualification | QualifiedExit         | completed                 |
- * | consultation_qualification | NotQualifiedExit      | completed                 |
- * | use_case                   | UseCaseCollectedExit  | build_for_me              |
- * | use_case                   | UseCaseSelfBuildExit  | how_to_build              |
- * | build_for_me               | QualifiedExit         | completed                 |
- * | build_for_me               | NotQualified+partner  | completed                 |
- * | build_for_me               | NotQualified+self     | how_to_build              |
- * | how_to_build               | BuildWithCodeExit     | completed                 |
- * | how_to_build               | BuildWithStudioExit   | completed                 |
- *
- * =============================================================================
  */
 
 import { Conversation, z } from "@botpress/runtime";
@@ -79,7 +60,6 @@ import {
   BuildWithCodeExit,
   BuildWithStudioExit,
 } from "../tools/exits";
-import { sendConsultationBooking, sendSoftLanding, sendADKResources, sendStudioResources } from "./helpers";
 
 export default new Conversation({
   channel: ["webchat.channel", "chat.channel"],
@@ -148,7 +128,7 @@ If their response is unclear, ask them to pick one of the two options.`,
         // STATE: exploring
         // TRANSITIONS:
         //   → consultation_qualification (if wants consultation)
-        //   → completed                  (if self-serve)
+        //   → how_to_build               (if self-serve)
         // ============================================
         case "exploring": {
           const result = await execute({
@@ -157,7 +137,7 @@ If their response is unclear, ask them to pick one of the two options.`,
 Your goals:
 1. Share exciting possibilities - customer support bots, sales assistants, internal tools, product integrations
 2. Mention they can check out DemoWorks for live examples: https://demoworks.botpress.com
-3. Ask if they'd like to see if they qualify for a free consultation with the team
+3. Ask if they'd like to see if they qualify for a free consultation, OR if they'd prefer to start building on their own
 
 Be enthusiastic but not pushy.
 
@@ -166,7 +146,7 @@ If they want the consultation:
 - Just say something like "Great, let me ask a few quick questions to see if you qualify"
 - Then use the wants_consultation exit
 
-If they prefer to explore on their own, use the self_serve exit.`,
+If they prefer to explore/build on their own, use the self_serve exit (we'll help them get started).`,
             exits: [WantsConsultationExit, SelfServeExit],
           });
 
@@ -174,8 +154,8 @@ If they prefer to explore on their own, use the self_serve exit.`,
             state.phase = "consultation_qualification";
             continue; // → immediately run consultation_qualification phase
           } else if (result.is(SelfServeExit)) {
-            state.phase = "completed";
-            return; // → done, wait for next message
+            state.phase = "how_to_build";
+            continue; // → immediately run how_to_build phase
           }
           return;
         }
@@ -207,11 +187,34 @@ Once you have the info, use the appropriate exit.`,
 
           if (result.is(ConsultationQualifiedExit)) {
             state.phase = "completed";
-            await sendConsultationBooking(conversation);
+            await conversation.send({
+              type: "text",
+              payload: {
+                text: `Great news - you qualify for a free consultation!
+
+Here's the link to book a time with our team:
+https://calendly.com/botpress-team/consultation
+
+We're excited to help you build something amazing!`,
+              },
+            });
             return; // → done, wait for next message
           } else if (result.is(ConsultationNotQualifiedExit)) {
             state.phase = "completed";
-            await sendSoftLanding(conversation);
+            await conversation.send({
+              type: "text",
+              payload: {
+                text: `Thanks for your interest! While our consultation slots are currently reserved for teams ready to build, here are some great resources to get you started:
+
+**Self-serve resources:**
+- Documentation: https://botpress.com/docs
+- Free templates: https://botpress.com/templates
+- Community Discord: https://discord.gg/botpress
+- YouTube tutorials: https://youtube.com/botpress
+
+Feel free to come back when you're ready to dive deeper!`,
+              },
+            });
             return; // → done, wait for next message
           }
           return;
@@ -246,16 +249,20 @@ CONVERSATION STYLE:
 - NEVER summarize or repeat back what they told you - no "So you want to build X that does Y"
 - Keep responses short and natural
 
-WHEN TO STOP ASKING:
-- If the user says "I don't know" or "not sure" to something, DON'T keep asking more questions
-- 2 follow-up questions max - then move on
+WHEN TO STOP GATHERING INFO:
+- If the user says "I don't know", "not sure", or "no" to something, don't keep pressing
+- 2 follow-up questions max about their use case
 - You don't need all the info - use "unknown" for missing fields
-- Don't interrogate. If you have channel + description, that's enough.
 
-When you have a decent picture (or user signals they don't have more details), ask:
-"Would you like help from our team to build this, or prefer to handle it yourself?"
+AFTER GATHERING (or if user isn't giving details), send a CHOICE message:
+- text: "Would you like help from our team, or prefer to build it yourself?"
+- options: "Help from your team" and "I'll build it myself"
 
-Then exit based on their answer.`,
+WHEN THEY CHOOSE:
+- "Help from your team" → use use_case_collected exit
+- "I'll build it myself" → use use_case_self_build exit
+
+IMPORTANT: Do NOT send any acknowledgment message like "Great!" - just exit silently. The next phase will handle the response.`,
             exits: [UseCaseCollectedExit, UseCaseSelfBuildExit],
           });
 
@@ -304,12 +311,14 @@ STEP 2 - Based on qualification:
 
 If QUALIFIED:
 - Ask how they'd like to connect: "Call me ASAP" or "Let me book a time"
-- If they want a call → collect their phone number, then use qualified exit with the phone number
-- If they want to book → use qualified exit with booking preference (no phone needed)
+- If they want a call → collect their phone number, then exit with the phone number
+- If they want to book → exit with booking preference (no phone needed)
 
 If NOT QUALIFIED:
 - Ask if they're interested in building it themselves OR learning about our partner program
-- Use the appropriate exit based on their choice
+- Exit based on their choice
+
+IMPORTANT: When exiting, do NOT send any acknowledgment message like "Great!" or "Thanks!" - just exit silently. The next phase will handle the response.
 
 Be respectful regardless of qualification. Everyone deserves good service.`,
             exits: [BuildForMeQualifiedExit, BuildForMeNotQualifiedExit],
@@ -384,18 +393,35 @@ Ask how they prefer to build:
 2. **Visual Editor (Studio)** - No-code, drag-and-drop, quick to prototype
    - Best for: non-developers, rapid prototyping, simple flows
 
-Help them understand which fits their skills and needs.
-Use the appropriate exit once they decide.`,
+WHEN THEY CHOOSE:
+- If they choose code/ADK → use build_with_code exit IMMEDIATELY
+- If they choose studio/visual → use build_with_studio exit IMMEDIATELY
+
+IMPORTANT: Do NOT send any acknowledgment message like "Great choice!" - just exit silently. The next phase will handle the response.`,
             exits: [BuildWithCodeExit, BuildWithStudioExit],
           });
 
           if (result.is(BuildWithCodeExit)) {
             state.phase = "completed";
-            await sendADKResources(conversation);
+            await conversation.send({
+              type: "text",
+              payload: {
+                text: `Awesome choice! The **Botpress ADK** gives you full control with TypeScript.
+
+Let's get you started: >>>>`,
+              },
+            });
             return; // → done, wait for next message
           } else if (result.is(BuildWithStudioExit)) {
             state.phase = "completed";
-            await sendStudioResources(conversation);
+            await conversation.send({
+              type: "text",
+              payload: {
+                text: `Great choice! **Botpress Studio** lets you build visually - no coding required.
+
+Let's get you started: >>>>`,
+              },
+            });
             return; // → done, wait for next message
           }
           return;
