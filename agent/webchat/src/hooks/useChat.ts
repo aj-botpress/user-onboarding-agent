@@ -18,6 +18,8 @@ export function useChat() {
   const conversationIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    let listener: Awaited<ReturnType<AuthenticatedClient["listenConversation"]>> | null = null;
+
     const init = async () => {
       try {
         // 1. Connect (handles user creation automatically)
@@ -29,7 +31,7 @@ export function useChat() {
         conversationIdRef.current = conversation.id;
 
         // 3. Listen for messages via SSE
-        const listener = await client.listenConversation({ id: conversation.id });
+        listener = await client.listenConversation({ id: conversation.id });
 
         listener.on("message_created", (event: Signals["message_created"]) => {
           if (event.isBot) {
@@ -66,6 +68,10 @@ export function useChat() {
     };
 
     init();
+
+    return () => {
+      listener?.disconnect();
+    };
   }, []);
 
   const sendMessage = useCallback(async (text: string) => {
