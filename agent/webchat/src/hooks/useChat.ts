@@ -19,19 +19,25 @@ export function useChat() {
 
   useEffect(() => {
     let listener: Awaited<ReturnType<AuthenticatedClient["listenConversation"]>> | null = null;
+    let cancelled = false;
 
     const init = async () => {
       try {
-        // 1. Connect (handles user creation automatically)
         const client = await Client.connect({ webhookId: WEBHOOK_ID });
+        if (cancelled) return;
+
         clientRef.current = client;
 
-        // 2. Create conversation
         const { conversation } = await client.createConversation({});
+        if (cancelled) return;
+
         conversationIdRef.current = conversation.id;
 
-        // 3. Listen for messages via SSE
         listener = await client.listenConversation({ id: conversation.id });
+        if (cancelled) {
+          listener.disconnect();
+          return;
+        }
 
         listener.on("message_created", (event: Signals["message_created"]) => {
           if (event.isBot) {
@@ -58,7 +64,7 @@ export function useChat() {
           isLoading: false,
         }));
       } catch (error) {
-        console.error("Failed to initialize chat:", error);
+        if (cancelled) return;
         setState((prev) => ({
           ...prev,
           isLoading: false,
@@ -70,6 +76,7 @@ export function useChat() {
     init();
 
     return () => {
+      cancelled = true;
       listener?.disconnect();
     };
   }, []);
@@ -77,7 +84,6 @@ export function useChat() {
   const sendMessage = useCallback(async (text: string) => {
     if (!clientRef.current || !conversationIdRef.current) return;
 
-    // Optimistic UI: show user message immediately
     const optimisticId = `optimistic-${Date.now()}`;
     const optimisticMessage: ChatMessage = {
       id: optimisticId,
@@ -99,10 +105,7 @@ export function useChat() {
         conversationId: conversationIdRef.current,
         payload: { type: "text", text },
       });
-      // Message sent successfully - no need to update state,
-      // the optimistic message is already shown
     } catch (error) {
-      console.error("Failed to send message:", error);
       // Remove optimistic message on failure
       setState((prev) => ({
         ...prev,

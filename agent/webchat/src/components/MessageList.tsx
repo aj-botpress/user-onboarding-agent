@@ -39,14 +39,6 @@ export function MessageList({
     setStreamedIds((prev) => new Set([...prev, msgId]));
   };
 
-  if (messages.length === 0 && !isLoading) {
-    return (
-      <div className="h-full flex items-center justify-center text-gray-400">
-        <p>Start a conversation...</p>
-      </div>
-    );
-  }
-
   // Only show messages that should be visible:
   // - User messages (outgoing) - always visible
   // - Bot messages that have streamed

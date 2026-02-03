@@ -9,6 +9,7 @@ export function Chat() {
   const [inputValue, setInputValue] = useState("");
   const [showChoices, setShowChoices] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Scroll user's message to top when they send one
   useEffect(() => {
@@ -41,6 +42,13 @@ export function Chat() {
     setShowChoices(false);
   }, [messages.length]);
 
+  // Focus input when bot finishes responding
+  useEffect(() => {
+    if (!isLoading && messages.length > 0) {
+      inputRef.current?.focus();
+    }
+  }, [isLoading, messages.length]);
+
   const handleSend = () => {
     if (!inputValue.trim()) return;
     sendMessage(inputValue.trim());
@@ -64,6 +72,13 @@ export function Chat() {
       ? (lastMessage.payload as ChoiceMessage).options
       : null;
 
+  const header = (
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
+      <span className="font-semibold text-gray-900">Botpress Scout</span>
+    </div>
+  );
+
   if (error) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -73,19 +88,43 @@ export function Chat() {
     );
   }
 
+  const handleStartChat = () => {
+    sendMessage("Hello!");
+  };
+
+  // Welcome screen when no messages yet (button disabled until connected)
+  if (messages.length === 0) {
+    return (
+      <div className="flex flex-col h-full">
+        {header}
+
+        {/* Welcome content */}
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-200 via-orange-300 to-pink-400 mb-6" />
+          <h2 className="text-xl font-semibold text-gray-900 text-center mb-6">
+            Welcome to Botpress, Let's have a chat!
+          </h2>
+          <button
+            onClick={handleStartChat}
+            disabled={!isConnected}
+            className="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-800 transition-colors cursor-pointer disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            Start chatting
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
-        <span className="font-semibold text-gray-900">Botpress Agent</span>
-      </div>
+      {header}
 
       {/* Messages */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
         <MessageList
           messages={messages}
-          isLoading={isLoading && messages.length > 0}
+          isLoading={isLoading}
           onStreamComplete={handleStreamComplete}
         />
       </div>
@@ -108,6 +147,7 @@ export function Chat() {
 
       {/* Input */}
       <MessageInput
+        ref={inputRef}
         value={inputValue}
         onChange={setInputValue}
         onSend={handleSend}
