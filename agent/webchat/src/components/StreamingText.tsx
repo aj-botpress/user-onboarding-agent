@@ -4,18 +4,39 @@ interface StreamingTextProps {
   text: string;
   speed?: number; // ms per character
   onComplete?: () => void;
+  showThinking?: boolean; // Show "Thinking..." before streaming
 }
 
-export function StreamingText({ text, speed = 20, onComplete }: StreamingTextProps) {
+export function StreamingText({
+  text,
+  speed = 20,
+  onComplete,
+  showThinking = false,
+}: StreamingTextProps) {
+  const [phase, setPhase] = useState<"thinking" | "streaming">(
+    showThinking ? "thinking" : "streaming"
+  );
   const [displayedText, setDisplayedText] = useState("");
   const onCompleteRef = useRef(onComplete);
   const hasCompletedRef = useRef(false);
 
-  // Keep the ref updated
   onCompleteRef.current = onComplete;
 
+  // Thinking phase: show "Thinking..." briefly, then transition to streaming
   useEffect(() => {
-    // Reset for new text
+    if (!showThinking) return;
+
+    const timer = setTimeout(() => {
+      setPhase("streaming");
+    }, 100); // Brief pause for smooth transition from loading indicator
+
+    return () => clearTimeout(timer);
+  }, [showThinking]);
+
+  // Streaming phase: character-by-character reveal
+  useEffect(() => {
+    if (phase !== "streaming") return;
+
     setDisplayedText("");
     hasCompletedRef.current = false;
 
@@ -34,7 +55,11 @@ export function StreamingText({ text, speed = 20, onComplete }: StreamingTextPro
     }, speed);
 
     return () => clearInterval(interval);
-  }, [text, speed]);
+  }, [phase, text, speed]);
+
+  if (phase === "thinking") {
+    return <span className="animate-shimmer">Thinking...</span>;
+  }
 
   return <span>{displayedText}</span>;
 }

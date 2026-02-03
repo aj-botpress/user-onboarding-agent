@@ -77,32 +77,37 @@ export function useChat() {
   const sendMessage = useCallback(async (text: string) => {
     if (!clientRef.current || !conversationIdRef.current) return;
 
-    try {
-      setState((prev) => ({ ...prev, isLoading: true }));
+    // Optimistic UI: show user message immediately
+    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticMessage: ChatMessage = {
+      id: optimisticId,
+      conversationId: conversationIdRef.current,
+      userId: "",
+      payload: { type: "text", text },
+      createdAt: new Date().toISOString(),
+      direction: "outgoing",
+    };
 
-      const { message } = await clientRef.current.createMessage({
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+      messages: [...prev.messages, optimisticMessage],
+    }));
+
+    try {
+      await clientRef.current.createMessage({
         conversationId: conversationIdRef.current,
         payload: { type: "text", text },
       });
-
-      const outgoingMessage: ChatMessage = {
-        id: message.id,
-        conversationId: message.conversationId,
-        userId: message.userId,
-        payload: message.payload as ChatMessage["payload"],
-        createdAt: message.createdAt,
-        direction: "outgoing",
-      };
-
-      setState((prev) => ({
-        ...prev,
-        messages: [...prev.messages, outgoingMessage],
-      }));
+      // Message sent successfully - no need to update state,
+      // the optimistic message is already shown
     } catch (error) {
       console.error("Failed to send message:", error);
+      // Remove optimistic message on failure
       setState((prev) => ({
         ...prev,
         isLoading: false,
+        messages: prev.messages.filter((m) => m.id !== optimisticId),
         error: error instanceof Error ? error.message : "Failed to send",
       }));
     }

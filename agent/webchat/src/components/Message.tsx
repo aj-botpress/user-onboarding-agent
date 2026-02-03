@@ -5,15 +5,22 @@ import { StreamingText } from "./StreamingText";
 interface MessageProps {
   message: ChatMessage;
   isNew?: boolean;
+  isFirstStreaming?: boolean; // First message to stream after user input
   onStreamComplete?: () => void;
 }
 
-export function Message({ message, isNew = false, onStreamComplete }: MessageProps) {
+export function Message({
+  message,
+  isNew = false,
+  isFirstStreaming = false,
+  onStreamComplete,
+}: MessageProps) {
   const { payload, direction } = message;
   const isBot = direction === "incoming";
 
-  // Capture isNew on first render so it doesn't change
+  // Capture on first render so they don't change
   const [shouldStream] = useState(() => isNew && isBot);
+  const [showThinking] = useState(() => isFirstStreaming && isBot);
   const hasCalledComplete = useRef(false);
 
   // If not streaming, call onStreamComplete immediately (once)
@@ -37,7 +44,12 @@ export function Message({ message, isNew = false, onStreamComplete }: MessagePro
         return (
           <p className="leading-relaxed">
             {shouldStream ? (
-              <StreamingText text={payload.text} speed={15} onComplete={handleStreamComplete} />
+              <StreamingText
+                text={payload.text}
+                speed={15}
+                showThinking={showThinking}
+                onComplete={handleStreamComplete}
+              />
             ) : (
               payload.text
             )}
@@ -49,7 +61,12 @@ export function Message({ message, isNew = false, onStreamComplete }: MessagePro
         return choicePayload.text ? (
           <p className="leading-relaxed">
             {shouldStream ? (
-              <StreamingText text={choicePayload.text} speed={15} onComplete={handleStreamComplete} />
+              <StreamingText
+                text={choicePayload.text}
+                speed={15}
+                showThinking={showThinking}
+                onComplete={handleStreamComplete}
+              />
             ) : (
               choicePayload.text
             )}
