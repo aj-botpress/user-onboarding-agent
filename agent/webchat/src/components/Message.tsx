@@ -91,7 +91,10 @@ export function Message({
   }
 
   return (
-    <div className="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl max-w-[80%] ml-auto">
+    <div
+      data-user-message
+      className="bg-gray-100 text-gray-900 px-4 py-3 rounded-2xl max-w-[80%] ml-auto"
+    >
       {renderContent()}
     </div>
   );

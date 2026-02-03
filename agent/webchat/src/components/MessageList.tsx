@@ -103,6 +103,9 @@ export function MessageList({
           <span className="animate-shimmer">Thinking...</span>
         </div>
       )}
+
+      {/* Spacer to allow scrolling user messages to top */}
+      <div className="min-h-[60vh]" />
     </div>
   );
 }

@@ -9,10 +9,32 @@ export function Chat() {
   const [inputValue, setInputValue] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Scroll user's message to top when they send one
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const lastMessage = messages[messages.length - 1];
+    if (!lastMessage || lastMessage.direction !== "outgoing") return;
+
+    // Find the last user message element and scroll it to top
+    requestAnimationFrame(() => {
+      const container = scrollContainerRef.current;
+      if (!container) return;
+
+      const userMessages = container.querySelectorAll("[data-user-message]");
+      const lastUserMessage = userMessages[userMessages.length - 1] as HTMLElement;
+
+      if (lastUserMessage) {
+        const containerRect = container.getBoundingClientRect();
+        const elementRect = lastUserMessage.getBoundingClientRect();
+        const scrollPosition = container.scrollTop + (elementRect.top - containerRect.top) - 16;
+
+        container.scrollTo({
+          top: scrollPosition,
+          behavior: "smooth",
+        });
+      }
+    });
   }, [messages]);
 
   // Reset showChoices when messages change (new message arrived)
@@ -62,13 +84,12 @@ export function Chat() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
         <MessageList
           messages={messages}
           isLoading={isLoading && messages.length > 0}
           onStreamComplete={handleStreamComplete}
         />
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Choice buttons - above input, right-aligned, staggered animation */}
