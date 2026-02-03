@@ -7,7 +7,6 @@ import type { ChoiceMessage } from "../types";
 export function Chat() {
   const { messages, isConnected, isLoading, error, sendMessage } = useChat();
   const [inputValue, setInputValue] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
   const [showChoices, setShowChoices] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +39,6 @@ export function Chat() {
   // Reset showChoices when messages change (new message arrived)
   useEffect(() => {
     setShowChoices(false);
-    setIsStreaming(true);
   }, [messages.length]);
 
   const handleSend = () => {
@@ -55,7 +53,6 @@ export function Chat() {
   };
 
   const handleStreamComplete = () => {
-    setIsStreaming(false);
     // Small delay before showing choices for better UX
     setTimeout(() => setShowChoices(true), 100);
   };
@@ -79,8 +76,9 @@ export function Chat() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
-        <span className="font-medium text-gray-900">Botpress Agent</span>
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
+        <span className="font-semibold text-gray-900">Botpress Agent</span>
       </div>
 
       {/* Messages */}
