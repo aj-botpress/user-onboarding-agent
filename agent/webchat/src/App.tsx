@@ -1,25 +1,15 @@
-import { Webchat } from "@botpress/webchat";
-import "./App.css";
-
-// Get this from your bot's webchat integration settings in Botpress Cloud
-// Or from running `adk dev` - check the console output for the client ID
-const CLIENT_ID = import.meta.env.VITE_WEBCHAT_CLIENT_ID || "";
+import { Chat } from "./components/Chat";
 
 function App() {
-  if (!CLIENT_ID) {
-    return (
-      <div className="setup-message">
-        <h2>Webchat Setup Required</h2>
-        <p>Create a <code>.env</code> file in the webchat folder with:</p>
-        <pre>VITE_WEBCHAT_CLIENT_ID=your-client-id</pre>
-        <p>Get your client ID from the Webchat integration in Botpress Cloud.</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="webchat-wrapper">
-      <Webchat clientId={CLIENT_ID} />
+    <div className="min-h-screen w-full bg-blue-400 flex items-center justify-center p-4">
+      {/* Outer frame (gray border effect) */}
+      <div className="w-full max-w-2xl h-[550px] bg-gray-300 rounded-3xl p-3 shadow-xl">
+        {/* Inner white container */}
+        <div className="h-full bg-white rounded-2xl overflow-hidden flex flex-col">
+          <Chat />
+        </div>
+      </div>
     </div>
   );
 }
