@@ -1,7 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useChat } from "../hooks/useChat";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
+import { GetStartedCTA } from "./custom-components/GetStartedCTA";
+import { getCTAVariant } from "./custom-components";
 import type { ChoiceMessage } from "../types";
 
 export function Chat() {
@@ -10,6 +12,25 @@ export function Chat() {
   const [showChoices, setShowChoices] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Filter out CTA markers from display and detect if CTA should be shown
+  const { displayMessages, ctaVariant } = useMemo(() => {
+    let variant: "adk" | "studio" | "explore" | null = null;
+
+    const filtered = messages.filter((msg) => {
+      if (msg.direction === "incoming" && msg.payload.type === "text") {
+        const text = (msg.payload as { text: string }).text;
+        const ctaType = getCTAVariant(text);
+        if (ctaType) {
+          variant = ctaType;
+          return false; // Don't display CTA markers
+        }
+      }
+      return true;
+    });
+
+    return { displayMessages: filtered, ctaVariant: variant };
+  }, [messages]);
 
   // Scroll user's message to top when they send one
   useEffect(() => {
@@ -66,10 +87,10 @@ export function Chat() {
   };
 
   // Get choices from the last bot message if it's a choice type
-  const lastMessage = messages[messages.length - 1];
+  const lastDisplayMessage = displayMessages[displayMessages.length - 1];
   const choices =
-    lastMessage?.direction === "incoming" && lastMessage?.payload?.type === "choice"
-      ? (lastMessage.payload as ChoiceMessage).options
+    lastDisplayMessage?.direction === "incoming" && lastDisplayMessage?.payload?.type === "choice"
+      ? (lastDisplayMessage.payload as ChoiceMessage).options
       : null;
 
   const header = (
@@ -123,37 +144,46 @@ export function Chat() {
       {/* Messages */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4">
         <MessageList
-          messages={messages}
+          messages={displayMessages}
           isLoading={isLoading}
           onStreamComplete={handleStreamComplete}
         />
       </div>
 
-      {/* Choice buttons - above input, right-aligned, staggered animation */}
-      {choices && showChoices && (
-        <div className="flex flex-col gap-2 items-end px-4 pb-2">
-          {choices.map((option, index) => (
-            <button
-              key={option.value}
-              className="bg-black text-white px-5 py-3 rounded-full text-sm hover:bg-gray-800 transition-all cursor-pointer animate-fade-in-up"
-              style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => handleChoiceSelect(option.label)}
-            >
-              {option.label}
-            </button>
-          ))}
+      {/* CTA card OR input section */}
+      {ctaVariant ? (
+        <div className="px-4 pb-4">
+          <GetStartedCTA variant={ctaVariant} />
         </div>
-      )}
+      ) : (
+        <>
+          {/* Choice buttons - above input, right-aligned, staggered animation */}
+          {choices && showChoices && (
+            <div className="flex flex-col gap-2 items-end px-4 pb-2">
+              {choices.map((option, index) => (
+                <button
+                  key={option.value}
+                  className="bg-black text-white px-5 py-3 rounded-full text-sm hover:bg-gray-800 transition-all cursor-pointer animate-fade-in-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                  onClick={() => handleChoiceSelect(option.label)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-      {/* Input */}
-      <MessageInput
-        ref={inputRef}
-        value={inputValue}
-        onChange={setInputValue}
-        onSend={handleSend}
-        disabled={!isConnected || isLoading}
-        placeholder="Send your message..."
-      />
+          {/* Input */}
+          <MessageInput
+            ref={inputRef}
+            value={inputValue}
+            onChange={setInputValue}
+            onSend={handleSend}
+            disabled={!isConnected || isLoading}
+            placeholder="Send your message..."
+          />
+        </>
+      )}
 
       {/* Footer */}
       <div className="text-center text-xs text-gray-400 pb-3">

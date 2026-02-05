@@ -246,7 +246,7 @@ You want to learn:
 - What they want to build
 - Where it will live (website, WhatsApp, Slack, etc.)
 - What it needs to connect to (CRM, helpdesk, etc.)
-- Expected volume (if not mentioned, you can ask)
+- Expected volume - if you ask, use specific ranges: "under 1,000 conversations/month", "1,000-10,000/month", or "over 10,000/month"
 - What type (support, sales, internal, etc.) - INFER this from their description, do NOT ask directly
 
 START with this question (or very similar):
@@ -267,7 +267,7 @@ WHEN TO STOP GATHERING INFO:
 - You don't need all the info - use "unknown" for missing fields
 
 AFTER GATHERING (or if user isn't giving details), send ONLY a CHOICE component:
-- text: "Would you like help from our team, or prefer to build it yourself?"
+- question: "Would you like help from our team, or prefer to build it yourself?"
 - options: "I'll need Botpress's expertise " and "I'll build it myself"
 
 WRONG (causes duplicate):
@@ -311,11 +311,11 @@ IMPORTANT: Do NOT summarize or repeat what they told you about their use case. J
 Use CHOICE components for questions. IMPORTANT: Do NOT send a separate text message before each choice - the choice component already displays the question text. Just send the choice directly.
 
 QUESTION 1 - Timeline:
-Send CHOICE with text: "Awesome! We'd love to help you. When are you looking to have this up and running?"
+Send CHOICE with question: "Awesome! We'd love to help you. When are you looking to have this up and running?"
 Options: "ASAP (within 2 weeks)", "Within a month", "Within a few months", "Just exploring for now"
 
 QUESTION 2 - Budget:
-Send CHOICE with text: "And what kind of monthly budget are you working with?"
+Send CHOICE with question: "And what kind of monthly budget are you working with?"
 Options: "Under $500/month", "$500-2000/month", "Over $2000/month", "Not sure yet"
 
 Qualification criteria:
@@ -326,7 +326,7 @@ Qualification criteria:
 AFTER QUALIFICATION:
 
 If QUALIFIED:
-Send CHOICE with text: "Great! How would you like to connect with our team?"
+Send CHOICE with question: "Great! How would you like to connect with our team?"
 Options: "Call me ASAP", "Let me book a time"
 - If call → collect their phone number, then exit
 - If book → exit with booking preference
@@ -348,18 +348,30 @@ When exiting, do NOT send any acknowledgment - just exit silently.`,
                   text: `Perfect! Our team will call you at ${result.output.phone} shortly. Talk soon!`,
                 },
               });
+              await conversation.send({
+                type: "text",
+                payload: { text: "{{EXPLORE_CTA}}" },
+              });
             } else {
               await conversation.send({
                 type: "text",
                 payload: {
-                  text: `Excellent! Here's the link to book a time with our team:
-
-https://calendly.com/botpress-sales/demo
-
-We'll dive into your use case and show you how we can help build it.
-
-Looking forward to it!`,
+                  text: `Excellent! You can book a time with our team here-`,
                 },
+              });
+              await conversation.send({
+                type: "text",
+                payload: { text: "{{BOOKING_CARD}}" },
+              });
+              await conversation.send({
+                type: "text",
+                payload: {
+                  text: `We'll dive into your use case and show you how we can help build it. Looking forward to it!`,
+                },
+              });
+              await conversation.send({
+                type: "text",
+                payload: { text: "{{EXPLORE_CTA}}" },
               });
             }
             return; // → done, wait for next message
@@ -382,7 +394,7 @@ Looking forward to it!`,
             instructions: `The user wants to build their chatbot themselves. Help them choose the right approach.
 
 Send ONLY a CHOICE component:
-- text: "There are two ways to build - with code for full control, or visually for speed. Which sounds more like you?"
+- question: "There are two ways to build - with code for full control, or visually for speed. Which sounds more like you?"
 - options: "With Code (ADK)", "Visual Builder (Studio)"
 
 WRONG (causes duplicate):
@@ -407,8 +419,12 @@ Do NOT send any acknowledgment message - just exit silently.`,
               payload: {
                 text: `Awesome choice! The **Botpress ADK** gives you full control with TypeScript.
 
-Let's get you started: >>>>`,
+Let's get you started!`,
               },
+            });
+            await conversation.send({
+              type: "text",
+              payload: { text: "{{ADK_CTA}}" },
             });
             return; // → done, wait for next message
           } else if (result.is(BuildWithStudioExit)) {
@@ -418,8 +434,12 @@ Let's get you started: >>>>`,
               payload: {
                 text: `Great choice! **Botpress Studio** lets you build visually - no coding required.
 
-Let's get you started: >>>>`,
+Let's get you started!`,
               },
+            });
+            await conversation.send({
+              type: "text",
+              payload: { text: "{{STUDIO_CTA}}" },
             });
             return; // → done, wait for next message
           }
