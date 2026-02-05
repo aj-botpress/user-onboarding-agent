@@ -237,11 +237,11 @@ You want to learn:
 - What they want to build
 - Where it will live (website, WhatsApp, Slack, etc.)
 - What it needs to connect to (CRM, helpdesk, etc.)
-- Expected volume - ask "Do you have a rough idea of how many conversations per month?" (NOT "small/medium/large")
-- What type (support, sales, internal, etc.)
+- Expected volume (if not mentioned, you can ask)
+- What type (support, sales, internal, etc.) - INFER this from their description, do NOT ask directly
 
 START with this question (or very similar):
-"I'd love to hear more about your use case. What kind of bot are you thinking about building, and where do you imagine it will be used?"
+"I'd love to hear more about your use case. What kind of bot are you thinking about building, where would it live, and would it need to connect to any tools your team already uses?"
 
 This gets them talking about description + channel naturally in one response.
 
@@ -257,14 +257,19 @@ WHEN TO STOP GATHERING INFO:
 - 2 follow-up questions max about their use case
 - You don't need all the info - use "unknown" for missing fields
 
-AFTER GATHERING (or if user isn't giving details), send a CHOICE component:
+AFTER GATHERING (or if user isn't giving details), send ONLY a CHOICE component:
 - text: "Would you like help from our team, or prefer to build it yourself?"
-- options: "Help from your team" and "I'll build it myself"
+- options: "I'll need Botpress's expertise " and "I'll build it myself"
 
-IMPORTANT: Do NOT send a separate text message before the choice - the choice component already displays the question. Just send the choice directly.
+WRONG (causes duplicate):
+1. Send text message "Would you like help..."
+2. Send choice with text "Would you like help..."
+
+CORRECT:
+1. Send ONLY the choice component (it displays its text field as the question)
 
 WHEN THEY CHOOSE:
-- "Help from your team" → use use_case_collected exit IMMEDIATELY
+- "I'll need Botpress's expertise " → use use_case_collected exit IMMEDIATELY
 - "I'll build it myself" → use use_case_self_build exit IMMEDIATELY
 
 Do NOT send any acknowledgment - just exit silently.`,
@@ -367,10 +372,16 @@ Looking forward to it!`,
           const result = await execute({
             instructions: `The user wants to build their chatbot themselves. Help them choose the right approach.
 
-Send a CHOICE component with text: "There are two ways to build - with code for full control, or visually for speed. Which sounds more like you?"
-Options: "With Code (ADK)", "Visual Builder (Studio)"
+Send ONLY a CHOICE component:
+- text: "There are two ways to build - with code for full control, or visually for speed. Which sounds more like you?"
+- options: "With Code (ADK)", "Visual Builder (Studio)"
 
-IMPORTANT: Do NOT send a separate text message before the choice - the choice component already displays the question. Just send the choice directly.
+WRONG (causes duplicate):
+1. Send text message "There are two ways to build..."
+2. Send choice with text "There are two ways to build..."
+
+CORRECT:
+1. Send ONLY the choice component (it displays its text field as the question)
 
 WHEN THEY CHOOSE:
 - Code/ADK → use build_with_code exit IMMEDIATELY

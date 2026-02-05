@@ -55,9 +55,9 @@ export function Chat() {
     setInputValue("");
   };
 
-  const handleChoiceSelect = (value: string) => {
+  const handleChoiceSelect = (label: string) => {
     setShowChoices(false);
-    sendMessage(value);
+    sendMessage(label);
   };
 
   const handleStreamComplete = () => {
@@ -137,7 +137,7 @@ export function Chat() {
               key={option.value}
               className="bg-black text-white px-5 py-3 rounded-full text-sm hover:bg-gray-800 transition-all cursor-pointer animate-fade-in-up"
               style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => handleChoiceSelect(option.value)}
+              onClick={() => handleChoiceSelect(option.label)}
             >
               {option.label}
             </button>
@@ -154,6 +154,11 @@ export function Chat() {
         disabled={!isConnected || isLoading}
         placeholder="Send your message..."
       />
+
+      {/* Footer */}
+      <div className="text-center text-xs text-gray-400 pb-3">
+        Built with the Botpress ADK
+      </div>
     </div>
   );
 }
