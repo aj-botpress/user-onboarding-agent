@@ -202,13 +202,22 @@ Once you have their answer, use the appropriate exit immediately.`,
             await conversation.send({
               type: "text",
               payload: {
-                text: `Great news - you qualify for a free consultation!
-
-Here's the link to book a time with our team:
-https://calendly.com/botpress-team/consultation
-
-We're excited to help you build something amazing!`,
+                text: `Great news - you qualify for a free consultation! Book a time with our team here-`,
               },
+            });
+            await conversation.send({
+              type: "text",
+              payload: { text: "{{BOOKING_CARD}}" },
+            });
+            await conversation.send({
+              type: "text",
+              payload: {
+                text: `We're excited to help you build something amazing!`,
+              },
+            });
+            await conversation.send({
+              type: "text",
+              payload: { text: "{{EXPLORE_CTA}}" },
             });
             return; // → done, wait for next message
           } else if (result.is(ConsultationNotQualifiedExit)) {
@@ -226,6 +235,10 @@ We're excited to help you build something amazing!`,
 
 Feel free to come back when you're ready to dive deeper!`,
               },
+            });
+            await conversation.send({
+              type: "text",
+              payload: { text: "{{EXPLORE_CTA}}" },
             });
             return; // → done, wait for next message
           }
