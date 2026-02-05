@@ -80,10 +80,10 @@ export const UseCaseSelfBuildExit = new Autonomous.Exit({
   description: "Use case details gathered, user wants to build it themselves",
   schema: z.object({
     description: z.string().describe("Summary of what the user wants to build"),
-    channel: z.enum(["website", "whatsapp", "slack", "other"]).optional(),
+    channel: z.enum(["website", "whatsapp", "slack", "other", "unknown"]).optional(),
     integrations: z.array(z.string()).optional(),
     size: z.enum(["small", "medium", "large", "unknown"]).optional().describe("Expected monthly conversations: small (<1k), medium (1k-10k), large (10k+)"),
-    type: z.enum(["cx", "lead_gen", "internal", "other"]).optional(),
+    type: z.enum(["cx", "lead_gen", "internal", "other", "unknown"]).optional(),
   }),
 });
 
