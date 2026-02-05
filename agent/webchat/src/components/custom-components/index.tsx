@@ -14,6 +14,11 @@ export const CTA_MARKERS = {
   EXPLORE: "{{EXPLORE_CTA}}",
 } as const;
 
+// Control markers - trigger UI state changes
+export const CONTROL_MARKERS = {
+  DISMISSABLE: "{{DISMISSABLE}}",
+} as const;
+
 // Check if text is a custom component marker
 export function isCustomComponent(text: string): boolean {
   return text in customComponents;
@@ -35,4 +40,14 @@ export function getCTAVariant(text: string): "adk" | "studio" | "explore" | null
   if (text === CTA_MARKERS.STUDIO) return "studio";
   if (text === CTA_MARKERS.EXPLORE) return "explore";
   return null;
+}
+
+// Check if text is a control marker
+export function isControlMarker(text: string): boolean {
+  return Object.values(CONTROL_MARKERS).includes(text as typeof CONTROL_MARKERS[keyof typeof CONTROL_MARKERS]);
+}
+
+// Check if text is the dismissable marker
+export function isDismissableMarker(text: string): boolean {
+  return text === CONTROL_MARKERS.DISMISSABLE;
 }

@@ -3,7 +3,7 @@ import { useChat } from "../hooks/useChat";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
 import { GetStartedCTA } from "./custom-components/GetStartedCTA";
-import { getCTAVariant } from "./custom-components";
+import { getCTAVariant, isDismissableMarker } from "./custom-components";
 import type { ChoiceMessage } from "../types";
 
 export function Chat() {
@@ -13,23 +13,32 @@ export function Chat() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Filter out CTA markers from display and detect if CTA should be shown
-  const { displayMessages, ctaVariant } = useMemo(() => {
+  // Filter out control markers from display and detect UI states
+  const { displayMessages, ctaVariant, isDismissable } = useMemo(() => {
     let variant: "adk" | "studio" | "explore" | null = null;
+    let dismissable = false;
 
     const filtered = messages.filter((msg) => {
       if (msg.direction === "incoming" && msg.payload.type === "text") {
         const text = (msg.payload as { text: string }).text;
+
+        // Check for CTA markers
         const ctaType = getCTAVariant(text);
         if (ctaType) {
           variant = ctaType;
           return false; // Don't display CTA markers
         }
+
+        // Check for dismissable marker
+        if (isDismissableMarker(text)) {
+          dismissable = true;
+          return false; // Don't display control markers
+        }
       }
       return true;
     });
 
-    return { displayMessages: filtered, ctaVariant: variant };
+    return { displayMessages: filtered, ctaVariant: variant, isDismissable: dismissable };
   }, [messages]);
 
   // Scroll user's message to top when they send one
@@ -93,10 +102,26 @@ export function Chat() {
       ? (lastDisplayMessage.payload as ChoiceMessage).options
       : null;
 
+  const handleClose = () => {
+    alert("Close button clicked");
+  };
+
   const header = (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
-      <span className="font-semibold text-gray-900">Botpress Scout</span>
+    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-purple-500" />
+        <span className="font-semibold text-gray-900">Botpress Scout</span>
+      </div>
+      {isDismissable && (
+        <button
+          onClick={handleClose}
+          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 
