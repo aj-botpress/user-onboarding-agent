@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage } from "../types";
 import { Message } from "./Message";
+import { isCustomComponent } from "./custom-components";
 
 interface MessageListProps {
   messages: ChatMessage[];
@@ -76,6 +77,23 @@ export function MessageList({
             const isFirstStreaming =
               isStreaming &&
               messages.findIndex((m) => m.id === msg.id) === firstUnstreamedBotIndex;
+            const isCustom =
+              msg.direction === "incoming" &&
+              msg.payload.type === "text" &&
+              isCustomComponent((msg.payload as { text: string }).text);
+
+            if (isCustom) {
+              return (
+                <div key={msg.id} className="w-full">
+                  <Message
+                    message={msg}
+                    isNew={isStreaming}
+                    isFirstStreaming={isFirstStreaming}
+                    onStreamComplete={() => handleMessageStreamComplete(msg.id)}
+                  />
+                </div>
+              );
+            }
 
             return (
               <Message

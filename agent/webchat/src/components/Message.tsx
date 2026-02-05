@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChatMessage, ChoiceMessage } from "../types";
 import { StreamingText } from "./StreamingText";
+import { isCustomComponent, getCustomComponent } from "./custom-components";
 
 interface MessageProps {
   message: ChatMessage;
@@ -41,6 +42,17 @@ export function Message({
   const renderContent = () => {
     switch (payload.type) {
       case "text":
+        // Check for custom component markers
+        if (isCustomComponent(payload.text)) {
+          // Call complete immediately since no streaming needed
+          if (!hasCalledComplete.current) {
+            hasCalledComplete.current = true;
+            setTimeout(() => onStreamComplete?.(), 0);
+          }
+          const CustomComponent = getCustomComponent(payload.text);
+          return CustomComponent ? <CustomComponent /> : null;
+        }
+
         return (
           <p className="leading-relaxed">
             {shouldStream ? (
@@ -83,8 +95,11 @@ export function Message({
   };
 
   if (isBot) {
+    // Check if this is a custom component (full width)
+    const isCustom = payload.type === "text" && isCustomComponent(payload.text);
+
     return (
-      <div className="text-gray-900">
+      <div className={`text-gray-900 ${isCustom ? "w-full" : ""}`}>
         {renderContent()}
       </div>
     );

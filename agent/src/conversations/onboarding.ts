@@ -115,8 +115,29 @@ If their response is unclear, ask them to pick one of the two options.`,
           });
 
           if (result.is(ExploringExit)) {
+            // Send exploring intro messages before transitioning
+            await conversation.send({
+              type: "text",
+              payload: {
+                text: "With Botpress, you can build support bots, sales assistants, internal tools, and seamlessly integrate them with your products. Explore live examples here:",
+              },
+            });
+            await conversation.send({
+              type: "text",
+              payload: { text: "{{DEMOS_CAROUSEL}}" },
+            });
+            await conversation.send({
+              type: "choice",
+              payload: {
+                text: "Would you like to see if you qualify for a free consultation, or prefer to start building on your own?",
+                options: [
+                  { label: "I'm interested in a consultation", value: "consultation" },
+                  { label: "I'll start building", value: "self_build" },
+                ],
+              },
+            });
             state.phase = "exploring";
-            continue; // → immediately run exploring phase
+            return; // Wait for user response
           } else if (result.is(HasUseCaseExit)) {
             state.phase = "use_case";
             continue; // → immediately run use_case phase
@@ -131,25 +152,17 @@ If their response is unclear, ask them to pick one of the two options.`,
         //   → how_to_build               (if self-serve)
         // ============================================
         case "exploring": {
+          // User already saw the intro messages, now handle their response
           const result = await execute({
-            instructions: `The user is exploring what Botpress can do.
+            instructions: `The user just saw our demos and was asked if they want a consultation or to build on their own.
 
-Your goals:
-1. Share exciting possibilities - customer support bots, sales assistants, internal tools, product integrations
-2. Mention they can check out DemoWorks for live examples: https://demoworks.botpress.com
-3. Ask if they'd like to see if they qualify for a free consultation, OR if they'd prefer to start building on their own
+Wait for their response. Do NOT send any messages.
 
-Be enthusiastic but not pushy.
+WHEN THEY RESPOND:
+- If they chose consultation or express interest in talking to the team → use wants_consultation exit IMMEDIATELY
+- If they chose to build or want to explore on their own → use self_serve exit IMMEDIATELY
 
-If they want the consultation:
-- Do NOT promise or confirm the consultation yet
-- Just say something like "Great, let me ask a few quick questions to see if you qualify"
-- Then use the wants_consultation exit
-
-If they prefer to explore/build on their own, OR say "no", "I'm good", "no thanks", etc:
-- Use the self_serve exit (we'll help them get started with building)
-
-Any decline or negative response should be treated as self_serve, not as ending the conversation.`,
+Do NOT send any acknowledgment - just exit silently.`,
             exits: [WantsConsultationExit, SelfServeExit],
           });
 
@@ -173,18 +186,14 @@ Any decline or negative response should be treated as self_serve, not as ending 
           const result = await execute({
             instructions: `You're qualifying the user for a free consultation.
 
-Ask about:
-1. Company size (startup, SMB, or enterprise)
-2. Do they have a use case in mind, even if vague?
-3. Are they ready to start building in the next few weeks?
+Ask them: "Quick question - what's the meaning of life?"
 
 Qualification criteria:
-- QUALIFIED: SMB or Enterprise with a use case and ready to start
-- QUALIFIED: Startup with clear use case and ready to start immediately
-- NOT QUALIFIED: Just browsing with no timeline
+- QUALIFIED: They answer "42" (or forty-two, or any variation of 42)
+- NOT QUALIFIED: Any other answer
 
-Be friendly and conversational. Don't make it feel like a form.
-Once you have the info, use the appropriate exit.`,
+Be playful about it. If they get it right, congratulate them on knowing the answer.
+Once you have their answer, use the appropriate exit immediately.`,
             exits: [ConsultationQualifiedExit, ConsultationNotQualifiedExit],
           });
 
