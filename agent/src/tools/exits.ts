@@ -35,11 +35,6 @@ export const SelfServeExit = new Autonomous.Exit({
 export const ConsultationQualifiedExit = new Autonomous.Exit({
   name: "consultation_qualified",
   description: "User qualifies for a free consultation",
-  schema: z.object({
-    companySize: z.enum(["startup", "smb", "enterprise"]),
-    hasUseCase: z.boolean(),
-    readyToStart: z.boolean(),
-  }),
 });
 
 export const ConsultationNotQualifiedExit = new Autonomous.Exit({
@@ -105,11 +100,6 @@ export const BuildForMeQualifiedExit = new Autonomous.Exit({
 export const BuildForMeNotQualifiedExit = new Autonomous.Exit({
   name: "build_for_me_not_qualified",
   description: "User does not qualify for sales, offer alternatives",
-  schema: z.object({
-    timeline: z.enum(["asap", "month", "few_months", "exploring"]),
-    budget: z.enum(["under_500", "500_to_2000", "over_2000", "not_sure"]),
-    interestedInPartner: z.boolean().describe("Whether they want partner program info"),
-  }),
 });
 
 // ============================================

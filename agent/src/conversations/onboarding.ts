@@ -84,7 +84,6 @@ export default new Conversation({
       switch (phase) {
         case "intent_classification": {
           const result = await execute({
-            model: "openai:gpt-4o",
             instructions: `You are a friendly onboarding assistant for Botpress.
 
 ${CHOICE_RULE}
@@ -239,19 +238,19 @@ When they choose → exit silently.`,
             exits: [UseCaseCollectedExit, UseCaseSelfBuildExit],
           });
 
+          if (result.is(UseCaseCollectedExit)) {
+            state.phase = "build_for_me";
+          } else if (result.is(UseCaseSelfBuildExit)) {
+            state.phase = "how_to_build";
+          } else {
+            return;
+          }
+
           await conversation.send({
             type: "text",
             payload: { text: "{{DISMISSABLE}}" },
           });
-
-          if (result.is(UseCaseCollectedExit)) {
-            state.phase = "build_for_me";
-            continue;
-          } else if (result.is(UseCaseSelfBuildExit)) {
-            state.phase = "how_to_build";
-            continue;
-          }
-          return;
+          continue;
         }
 
         case "build_for_me": {
